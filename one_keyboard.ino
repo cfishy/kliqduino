@@ -4,7 +4,7 @@
 #include <Keypad.h>
 #include <Usb.h>
 
-/* Digital output pin for the single key */
+/* Digital output pin for the single key switch, closed to ground */
 const int KEY1 = 7;   
 /* USB HID scan code to send when the key is pressed. */
 const int scancode = 4; /* scan code to send */
