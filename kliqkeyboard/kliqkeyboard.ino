@@ -123,16 +123,41 @@ void buildBuffer() {
 
 bool keyStateChanged() {
   printBitMap();
-  return kpd.getKeys();
-  for (byte r=0; r < ROWS; r++) {
-    for (byte c=0; c < COLS; c++) {
+  printDiffMap();
+  pullUpRows();
+ 
+  for (byte c=0; c < COLS; c++) {
+    pinMode(colPins[c], OUTPUT);
+    digitalWrite(colPins[c], LOW);  // Begin column pulse output.
+   
+    for (byte r=0; r < ROWS; r++) {
+      bitWrite(bitMap[r], c, !pinRead(rowPins[r]));  // keypress is active low but invert to high.
+
+      // Set pin to high impedance input. Effectively ends column pulse.
+      digitalWrite(colPins[c],HIGH);
+      pinMode(colPins[c],INPUT);
+    }
+  }
+  
+  for (byte c=0; c < COLS; c++) {
+    for (byte r=0; r < ROWS; r++) {
       if (bitRead(kpd.bitMap[r],c) != bitRead(stateMap[r],c)) {
         Serial.println("FOUND");
+        delay(1000);
         return true;
       }
     }
   }
   return false;
+}
+
+// When sharing row pins with other hardware
+// they may need to be re-intialized.
+void pullUpRows() {
+  for (byte r=0; r<ROWS; r++) {
+    pinMode(rowPins[r],INPUT_PULLUP);
+    digitalWrite(rowPins[r],HIGH);
+  }
 }
 
 void storeKeyState() {
@@ -144,16 +169,28 @@ void storeKeyState() {
 }
 
 void printBitMap() {
-  Serial.println("keystate: ");
+  Serial.print("keystate: ");
   Serial.write("{");
   Serial.print(bitRead(kpd.bitMap[0], 0));
-  Serial.print(bitRead(kpd.bitMap[0], 0)==1);
   Serial.write(",");
   Serial.print(bitRead(kpd.bitMap[0], 1));
   Serial.write(",");
   Serial.print(bitRead(kpd.bitMap[1], 0));
   Serial.write(",");
   Serial.print(bitRead(kpd.bitMap[1], 1));
+  Serial.println("}"); 
+}
+
+void printDiffMap() {
+  Serial.print("keydiff: ");
+  Serial.write("{");
+  Serial.print(bitRead(kpd.bitMap[0], 0)!=bitRead(stateMap[0],0));
+  Serial.write(",");
+  Serial.print(bitRead(kpd.bitMap[0], 1)!=bitRead(stateMap[0],0));
+  Serial.write(",");
+  Serial.print(bitRead(kpd.bitMap[1], 0)!=bitRead(stateMap[0],0));
+  Serial.write(",");
+  Serial.print(bitRead(kpd.bitMap[1], 1)!=bitRead(stateMap[0],0));
   Serial.println("}"); 
 }
 
@@ -168,11 +205,9 @@ void loop() {
   /* scan */
   if (isRunState() != PROGRAMMING) {
     if (keyStateChanged()) {             //change detected
-
       Serial.print(" keypressed ");
-
-
-
+      delay(1000);
+      
       storeKeyState();                  //remember the state
       if (DEBUG) {
         //Serial.write(" keypress ");
