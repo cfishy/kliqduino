@@ -1,6 +1,6 @@
 /* Copyright Hsiao-yu Chen  2012
-   Arduino based keyboard controller.
-*/
+ Arduino based keyboard controller.
+ */
 #include <Keypad.h>
 #include <Usb.h>
 
@@ -16,16 +16,21 @@ const int MODE_TOGGLE = 2;
 /* when toggle switch is open, LED off, indicating running mode. */
 int statusLED = 13;  /* built in LED */
 
- 
+
 /* Key matrix definition */
 const byte ROWS = 2;
 const byte COLS = 2;
 char keys[ROWS][COLS] = {
- {'1', '2'},
- {'3', '4'}
+  {
+    '1', '2'    }
+  ,
+  {
+    '3', '4'    }
 };
-byte rowPins[ROWS] = {9, 10};
-byte colPins[COLS] = {4, 5};
+byte rowPins[ROWS] = {
+  8, 7};
+byte colPins[COLS] = {
+  4, 5};
 Keypad kpd = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 
@@ -36,11 +41,16 @@ const bool PROGRAMMING = 1;  /* Programming mode */
 
 
 /* USB report buffer, the last 8 bytes. */
-uint8_t keyBuffer[8] = {0,0,0,0,0,0,0,0};
-uint8_t previousBuffer[8] = {0,0,0,0,0,0,0,0};
+uint8_t keyBuffer[8] = {
+  0,0,0,0,0,0,0,0};
+uint8_t previousBuffer[8] = {
+  0,0,0,0,0,0,0,0};
+
+/* stateMap is the last state of keypad.bitMap */
+uint stateMap[MAPSIZE];
 
 /* Setup a toggle to switch between 
-   programming and run mode. Avoids interference. */
+ programming and run mode. Avoids interference. */
 void setupModeToggle() {
   /* pull up */
   pinMode(MODE_TOGGLE, INPUT);
@@ -54,7 +64,8 @@ void setupModeToggle() {
 void debugWriteState() {
   if (isRunState() == PROGRAMMING) {
     Serial.write(" programming ");
-  } else {
+  } 
+  else {
     Serial.write(" running ");
   }
 }
@@ -71,6 +82,8 @@ int scan() {
 
 void setup() {
   setupModeToggle();
+  kpd.setHoldTime(10);
+  kpd.setDebounceTime(5);
 }
 
 bool bufferChanged() {
@@ -84,7 +97,7 @@ bool bufferChanged() {
   return false;
 }
 
-void updateBuffer() {
+void storeBuffer() {
   //strncpy((char*)previousBuffer, (char*)keyBuffer, 8);
   for (int i = 0; i < 8; i++ ) {
     if (previousBuffer[i] != keyBuffer[i]) {
@@ -93,32 +106,83 @@ void updateBuffer() {
   }
 }
 
+void buildBuffer() {
+  int keyPosition = kpd.findInList('1');
+  //debug
+  Serial.print("1 key is ");
+  Serial.println(kpd.key[keyPosition].kstate);
+  Serial.println("");
+
+  if (keyBuffer[3]) {
+    keyBuffer[3] = 0;
+  } 
+  else {
+    keyBuffer[3] = scancode;
+  }
+}
+
+bool keyStateChanged() {
+  printBitMap();
+  return kpd.getKeys();
+  for (byte r=0; r < ROWS; r++) {
+    for (byte c=0; c < COLS; c++) {
+      if (bitRead(kpd.bitMap[r],c) != bitRead(stateMap[r],c)) {
+        Serial.println("FOUND");
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+void storeKeyState() {
+  for (byte r=0; r < ROWS; r++) {
+    for (byte c=0; c < COLS; c++) {
+      bitWrite(stateMap[r],c, bitRead(kpd.bitMap[r],c));
+    }
+  }
+}
+
+void printBitMap() {
+  Serial.println("keystate: ");
+  Serial.write("{");
+  Serial.print(bitRead(kpd.bitMap[0], 0));
+  Serial.print(bitRead(kpd.bitMap[0], 0)==1);
+  Serial.write(",");
+  Serial.print(bitRead(kpd.bitMap[0], 1));
+  Serial.write(",");
+  Serial.print(bitRead(kpd.bitMap[1], 0));
+  Serial.write(",");
+  Serial.print(bitRead(kpd.bitMap[1], 1));
+  Serial.println("}"); 
+}
+
 void loop() {
   /* LED to indicate whether programming mode is on. */
   digitalWrite(statusLED, isRunState());
   /* TODO: optimize to use isRunState once */
   if (DEBUG) {
-    debugWriteState();
+    //debugWriteState();
   }
-  
+
   /* scan */
   if (isRunState() != PROGRAMMING) {
-    if (kpd.getKeys()) { // key is pressed
+    if (keyStateChanged()) {             //change detected
+
+      Serial.print(" keypressed ");
+
+
+
+      storeKeyState();                  //remember the state
       if (DEBUG) {
-        Serial.write(" keypress ");
+        //Serial.write(" keypress ");
       }
-      keyBuffer[3] = scancode;
-     
-    } else {
-      keyBuffer[3] = 0;
-    }
-    if (bufferChanged()) {  //send report
-      if (DEBUG) {
-        Serial.write(" SendReport ");
-      }
+      buildBuffer();
       HID_SendReport(2, keyBuffer, 8);
-      updateBuffer();
+      storeBuffer();
     }
   }
-  delay(50);
+  delay(100);
 }
+
+
