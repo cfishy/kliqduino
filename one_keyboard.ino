@@ -1,25 +1,26 @@
 /* Copyright Hsiao-yu Chen  2012
    Arduino based keyboard controller.
-   
-   Arduino one key keyboard.
 */
 #include <Keypad.h>
 #include <Usb.h>
+
+/* Digital output pin for the single key */
+const int KEY1 = 7;   
+/* USB HID scan code to send when the key is pressed. */
+const int scancode = 4; /* scan code to send */
+
 
 const bool DEBUG = 1;    /* Debug via Serial */
 const bool PROGRAMMING = 1;  /* Programming mode */
 const int MODE_TOGGLE = 2;   /* pin for mode toggle switch, short to ground */
 
-const int KEY1 = 7;   /* pin for the single key */
-
-/* USB HID scan code to send when the key is pressed. */
-const int scancode = 4; /* scan code to send */
 
 /* Mode toggle switch tester to ensure mode toggle is working. */
-  /* when toggle switch is closed, LED should be off, indicating programming mode. */
-  /* when toggle switch is open, LED should be on, indicating running mode. */
-
+/* when toggle switch is closed, LED should be off, indicating programming mode. */
+/* when toggle switch is open, LED should be on, indicating running mode. */
 int statusLED = 13;  /* built in LED */
+
+/* USB report buffer, the last 8 bytes. */
 uint8_t keyBuffer[8] = {0,0,0,0,0,0,0,0};
 uint8_t previousBuffer[8] = {0,0,0,0,0,0,0,0};
 
