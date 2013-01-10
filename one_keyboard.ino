@@ -5,20 +5,24 @@
 #include <Usb.h>
 
 /* Digital output pin for the single key switch, closed to ground */
-const int KEY1 = 7;   
+const int KEY_SWITCH_PIN = 7;   
 /* USB HID scan code to send when the key is pressed. */
 const int scancode = 4; /* scan code to send */
+
+/* pin for mode toggle switch, short to ground */
+/* This programming mode stops keyboard from functioning. */
+const int MODE_TOGGLE = 2; 
+/* when toggle switch is closed, LED on, indicating programming mode. */
+/* when toggle switch is open, LED off, indicating running mode. */
+int statusLED = 13;  /* built in LED */
+
+ 
 
 
 const bool DEBUG = 1;    /* Debug via Serial */
 const bool PROGRAMMING = 1;  /* Programming mode */
-const int MODE_TOGGLE = 2;   /* pin for mode toggle switch, short to ground */
 
 
-/* Mode toggle switch tester to ensure mode toggle is working. */
-/* when toggle switch is closed, LED should be off, indicating programming mode. */
-/* when toggle switch is open, LED should be on, indicating running mode. */
-int statusLED = 13;  /* built in LED */
 
 /* USB report buffer, the last 8 bytes. */
 uint8_t keyBuffer[8] = {0,0,0,0,0,0,0,0};
@@ -27,11 +31,11 @@ uint8_t previousBuffer[8] = {0,0,0,0,0,0,0,0};
 /* Setup a toggle to switch between 
    programming and run mode. Avoids interference. */
 void setupModeToggle() {
-  /* Assign toggle pin and pull up */
+  /* pull up */
   pinMode(MODE_TOGGLE, INPUT);
   digitalWrite(MODE_TOGGLE, HIGH);
-  digitalWrite(KEY1, HIGH);
-  /* LED to indicate mode */
+  digitalWrite(KEY_SWITCH_PIN, HIGH);
+  /* LED to indicate programming mode */
   pinMode(statusLED, OUTPUT);  
   Serial.begin(9600);
 }
@@ -50,7 +54,7 @@ bool isRunState() {
 }
 
 int scan() {
-  return !digitalRead(KEY1);
+  return !digitalRead(KEY_SWITCH_PIN);
 }
 
 
