@@ -122,46 +122,30 @@ void buildBuffer() {
 }
 
 bool keyStateChanged() {
-  printBitMap();
-  printDiffMap();
   
   // When sharing row pins with other hardware
   // they may need to be re-intialized.
   for (byte r=0; r<ROWS; r++) {
     pinMode(rowPins[r],INPUT_PULLUP);
     digitalWrite(rowPins[r],HIGH);
-    //debug
-    Serial.print("pullup row ");
-    Serial.println(r);
   }
   
   for (byte c=0; c < COLS; c++) {
+    // Begin column pulse output.
     pinMode(colPins[c], OUTPUT);
-    digitalWrite(colPins[c], LOW);  // Begin column pulse output.
+    digitalWrite(colPins[c], LOW);  
    
     for (byte r=0; r < ROWS; r++) {
-      Serial.print("Reading (");
-      Serial.print(r);
-      Serial.print(",");
-      Serial.print(c);
-      Serial.print(")->");
-      Serial.print(!digitalRead(rowPins[r]));
-      Serial.println("");
-      delay(400);
       bitWrite(kpd.bitMap[r], c, !digitalRead(rowPins[r]));  // keypress is active low but invert to high.
     }
     // Set pin to high impedance input. Effectively ends column pulse.
     digitalWrite(colPins[c],HIGH);
     pinMode(colPins[c],INPUT);
-    
   }
-  
   
   for (byte c=0; c < COLS; c++) {
     for (byte r=0; r < ROWS; r++) {
       if (bitRead(kpd.bitMap[r],c) != bitRead(stateMap[r],c)) {
-        Serial.println("FOUND");
-        delay(1000);
         return true;
       }
     }
@@ -173,9 +157,6 @@ bool keyStateChanged() {
 
 
 void storeKeyState() {
-  Serial.println("");
-  Serial.println("storeKeyState");
-  Serial.println("");
   for (byte c=0; c < COLS; c++) {
     for (byte r=0; r < ROWS; r++) {
       bitWrite(stateMap[r],c, bitRead(kpd.bitMap[r],c));
@@ -222,7 +203,7 @@ void loop() {
   if (isRunState() != PROGRAMMING) {
     if (keyStateChanged()) {             //change detected
       Serial.print(" keypressed ");
-      delay(1000);
+      printBitMap();
       storeKeyState();                  //remember the state
       buildBuffer();
       HID_SendReport(2, keyBuffer, 8);
