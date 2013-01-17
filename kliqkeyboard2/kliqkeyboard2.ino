@@ -21,7 +21,7 @@ const byte COLS = 2;
 
 //USB HID keyboard scancodes
 char keys[ROWS][COLS] = {
-  {    4, 5    }, //a, b
+  {    4, 224   }, //a, b
   {    6, 7    }, //c, d
   {    225, 226}, //L_shift, L_alt
 };
@@ -33,12 +33,12 @@ Keypad kpd = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 
 /* Debug and disaster relief flags */
-const bool DEBUG = 0;    /* Debug via Serial */
+const bool DEBUG = 1;    /* Debug via Serial */
 const bool PROGRAMMING = 1;  /* Programming mode */
 
 
 
-/* USB report buffer, the last 8 bytes. */
+/* USB boot keyboard report buffer, the last 8 bytes. */
 uint8_t keyBuffer[8] = {
   0,0,0,0,0,0,0,0};
 
@@ -57,12 +57,13 @@ void setupModeToggle() {
 }
 
 void debugWriteState() {
+  return;
   if (DEBUG) {
     if (isRunState() == PROGRAMMING) {
-      Serial.write(" programming ");
+      Serial.println(" programming ");
     } 
     else {
-      Serial.write(" running ");
+      Serial.println(" running ");
     }
   }
 }
@@ -81,27 +82,26 @@ void printKeyMap() {
     Serial.print("-");
     Serial.print(byte(kpd.key[0].kchar));
     Serial.print("-");
-    Serial.print(int(kpd.key[0].kchar) >= 224);
     Serial.write(",");
     Serial.print(kpd.key[1].kstate);
     Serial.print("-");
-    Serial.print(uint(kpd.key[1].kchar));
+    Serial.print(byte(kpd.key[1].kchar));
     Serial.write(",");
     Serial.print(kpd.key[2].kstate);
     Serial.print("-");
-    Serial.print(uint(kpd.key[2].kchar));
+    Serial.print(byte(kpd.key[2].kchar));
     Serial.write(",");
     Serial.print(kpd.key[3].kstate);
     Serial.print("-");
-    Serial.print(uint(kpd.key[3].kchar));
+    Serial.print(byte(kpd.key[3].kchar));
     Serial.write(",");
     Serial.print(kpd.key[4].kstate);
     Serial.print("-");
-    Serial.print(uint(kpd.key[4].kchar));
+    Serial.print(byte(kpd.key[4].kchar));
     Serial.write(",");
     Serial.print(kpd.key[5].kstate);
     Serial.print("-");
-    Serial.print(uint(kpd.key[5].kchar));
+    Serial.print(byte(kpd.key[5].kchar));
     Serial.write(",");
     Serial.println("}"); 
   }
