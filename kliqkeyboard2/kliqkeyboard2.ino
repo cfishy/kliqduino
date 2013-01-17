@@ -20,8 +20,9 @@ const byte ROWS = 3;
 const byte COLS = 2;
 
 //USB HID keyboard scancodes
+//http://www.usb.org/developers/devclass_docs/Hut1_12v2.pdf page 55
 char keys[ROWS][COLS] = {
-  {    4, 224   }, //a, b
+  {    4, 5   }, //a, b
   {    6, 7    }, //c, d
   {    225, 226}, //L_shift, L_alt
 };
@@ -157,7 +158,7 @@ void makeKeyBuffer() {
 void setup() {
   setupModeToggle();
   kpd.setHoldTime(10);
-  kpd.setDebounceTime(15);
+  kpd.setDebounceTime(145);
 }
 
 void loop() {
@@ -166,10 +167,8 @@ void loop() {
   /* TODO: optimize to use isRunState once */
   debugWriteState();
   if (isRunState()!=PROGRAMMING && kpd.getKeys()) {
-    for (int i = 0; i < MAPSIZE; i++) {
-      makeKeyBuffer();
-      HID_SendReport(2, keyBuffer, 8);
-    }
+    makeKeyBuffer();
+    HID_SendReport(2, keyBuffer, 8);
   }
 }
 
