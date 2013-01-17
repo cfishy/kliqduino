@@ -33,7 +33,7 @@ Keypad kpd = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 
 /* Debug and disaster relief flags */
-const bool DEBUG = 1;    /* Debug via Serial */
+const bool DEBUG = 0;    /* Debug via Serial */
 const bool PROGRAMMING = 1;  /* Programming mode */
 
 
@@ -51,15 +51,19 @@ void setupModeToggle() {
   /* LED to indicate programming mode */
   pinMode(statusLED, OUTPUT);  
   /*Serial debugging */
-  Serial.begin(9600);
+  if (DEBUG) {
+    Serial.begin(9600);
+  }
 }
 
 void debugWriteState() {
-  if (isRunState() == PROGRAMMING) {
-    Serial.write(" programming ");
-  } 
-  else {
-    Serial.write(" running ");
+  if (DEBUG) {
+    if (isRunState() == PROGRAMMING) {
+      Serial.write(" programming ");
+    } 
+    else {
+      Serial.write(" running ");
+    }
   }
 }
 
@@ -70,40 +74,42 @@ bool isRunState() {
 
 //debug method
 void printKeyMap() {
-  Serial.print("keystate: ");
-  Serial.write("{");
-  Serial.print(kpd.key[0].kstate);
-  Serial.print("-");
-  Serial.print(byte(kpd.key[0].kchar));
-  Serial.print("-");
-  Serial.print(int(kpd.key[0].kchar) >= 224);
-  Serial.write(",");
-  Serial.print(kpd.key[1].kstate);
-  Serial.print("-");
-  Serial.print(uint(kpd.key[1].kchar));
-  Serial.write(",");
-  Serial.print(kpd.key[2].kstate);
-  Serial.print("-");
-  Serial.print(uint(kpd.key[2].kchar));
-  Serial.write(",");
-  Serial.print(kpd.key[3].kstate);
-  Serial.print("-");
-  Serial.print(uint(kpd.key[3].kchar));
-  Serial.write(",");
-  Serial.print(kpd.key[4].kstate);
-  Serial.print("-");
-  Serial.print(uint(kpd.key[4].kchar));
-  Serial.write(",");
-  Serial.print(kpd.key[5].kstate);
-  Serial.print("-");
-  Serial.print(uint(kpd.key[5].kchar));
-  Serial.write(",");
-  Serial.println("}"); 
+  if (DEBUG) {
+    Serial.print("keystate: ");
+    Serial.write("{");
+    Serial.print(kpd.key[0].kstate);
+    Serial.print("-");
+    Serial.print(byte(kpd.key[0].kchar));
+    Serial.print("-");
+    Serial.print(int(kpd.key[0].kchar) >= 224);
+    Serial.write(",");
+    Serial.print(kpd.key[1].kstate);
+    Serial.print("-");
+    Serial.print(uint(kpd.key[1].kchar));
+    Serial.write(",");
+    Serial.print(kpd.key[2].kstate);
+    Serial.print("-");
+    Serial.print(uint(kpd.key[2].kchar));
+    Serial.write(",");
+    Serial.print(kpd.key[3].kstate);
+    Serial.print("-");
+    Serial.print(uint(kpd.key[3].kchar));
+    Serial.write(",");
+    Serial.print(kpd.key[4].kstate);
+    Serial.print("-");
+    Serial.print(uint(kpd.key[4].kchar));
+    Serial.write(",");
+    Serial.print(kpd.key[5].kstate);
+    Serial.print("-");
+    Serial.print(uint(kpd.key[5].kchar));
+    Serial.write(",");
+    Serial.println("}"); 
+  }
 }
 
 
 void makeKeyBuffer() {
-  //TODO: modifier keys
+  //TODO: debug why key registers are slow when typing fast during shift modifier.
   //The HID boot keyboard scancode starts at 3rd byte, til 8th.
   printKeyMap();
   //zero out keyBuffer before refilling, need optimization
@@ -158,11 +164,8 @@ void loop() {
   /* LED to indicate whether programming mode is on. */
   digitalWrite(statusLED, isRunState());
   /* TODO: optimize to use isRunState once */
-  if (DEBUG) {
-   //debugWriteState();
-  }
+  debugWriteState();
   if (isRunState()!=PROGRAMMING && kpd.getKeys()) {
-    Serial.println("state changed.");
     for (int i = 0; i < MAPSIZE; i++) {
       makeKeyBuffer();
       HID_SendReport(2, keyBuffer, 8);
